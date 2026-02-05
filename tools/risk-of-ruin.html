@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Risk of Ruin • Risk & Discipline Library</title>
+  <meta name="description" content="A simple risk-of-ruin tool to estimate how likely you are to blow up after a losing streak, based on risk per trade and drawdown limit." />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="container header">
+    <div class="brand">
+      <a class="logo" href="../index.html">Risk & Discipline Library</a>
+      <div class="tagline">How likely are you to blow up from a losing streak?</div>
+    </div>
+    <nav class="nav">
+      <a href="../library.html">Library</a>
+      <a href="../tools.html">Tools</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Risk of Ruin (simple)</h1>
+      <p class="muted">
+        This is a simplified educational model. It does <strong>not</strong> predict markets.
+        It shows how position sizing + losing streaks can mathematically trap you.
+      </p>
+
+      <div class="kpi" style="margin-top:12px;">
+        <div class="card">
+          <div class="small">Max Losing Streak Before Limit</div>
+          <div id="maxStreak" class="big">—</div>
+          <div class="small">How many losses in a row until you hit your drawdown limit</div>
+        </div>
+        <div class="card">
+          <div class="small">Chance of at least one such streak</div>
+          <div id="streakProb" class="big">—</div>
+          <div class="small">Estimated probability across N trades</div>
+        </div>
+      </div>
+
+      <hr />
+
+      <label>Risk per Trade (%)</label>
+      <input id="riskPct" type="number" min="0.01" step="0.01" placeholder="e.g. 1" />
+
+      <label>Win Rate (%)</label>
+      <input id="winRate" type="number" min="1" max="99" step="0.1" placeholder="e.g. 45" />
+
+      <label>Drawdown Limit (%)</label>
+      <input id="ddLimit" type="number" min="1" max="99" step="0.1" placeholder="e.g. 20" />
+
+      <label>Number of Trades (simulation horizon)</label>
+      <input id="nTrades" type="number" min="10" step="1" placeholder="e.g. 200" />
+
+      <button class="button" id="calcBtn" style="margin-top:14px;">Calculate</button>
+
+      <p id="note" class="muted" style="margin-top:12px;"></p>
+
+      <hr />
+
+      <h2>How to use this safely</h2>
+      <ul class="muted">
+        <li>This assumes each trade risks the same percent and results are independent (real life is messier).</li>
+        <li>“Drawdown limit” is a personal stop line (example: you stop trading at -20% to reset).</li>
+        <li>If the chance is high, you don’t need a “better strategy” — you need smaller risk.</li>
+      </ul>
+
+      <p class="muted">
+        Related: <a href="../articles/position-sizing.html">Position sizing (concept)</a> •
+        <a href="../tools/position-size.html">Position size calculator</a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <div class="muted">Educational only • <a href="../legal.html">Disclaimers</a></div>
+  </footer>
+
+  <script>
+    function round(n, d = 2) {
+      const p = Math.pow(10, d);
+      return Math.round(n * p) / p;
+    }
+
+    function formatPct(n, d = 2) {
+      if (!isFinite(n)) return "—";
+      return round(n, d).toLocaleString(undefined, { maximumFractionDigits: d }) + "%";
+    }
+
+    // Approximate probability of at least one run of k losses in N trades.
+    // We use a simple approximation: expected number of k-loss runs ≈ (N - k
