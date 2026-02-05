@@ -91,4 +91,84 @@
     }
 
     // Approximate probability of at least one run of k losses in N trades.
-    // We use a simple approximation: expected number of k-loss runs ≈ (N - k
+    // We use a simple approximation: expected number of k-loss runs ≈ (N - k + 1) * q^k
+    // Then P(at least one) ≈ 1 - exp(-expected_runs)
+    // This is not exact, but it's intuitive and good for education.
+    function probAtLeastOneRun(N, k, q) {
+      if (k <= 0) return 1;
+      if (N < k) return 0;
+      const expectedRuns = (N - k + 1) * Math.pow(q, k);
+      const p = 1 - Math.exp(-expectedRuns);
+      return Math.min(1, Math.max(0, p));
+    }
+
+    function calculate() {
+      const riskPct = Number(document.getElementById("riskPct").value);
+      const winRate = Number(document.getElementById("winRate").value);
+      const ddLimit = Number(document.getElementById("ddLimit").value);
+      const nTrades = Number(document.getElementById("nTrades").value);
+
+      const maxStreakEl = document.getElementById("maxStreak");
+      const streakProbEl = document.getElementById("streakProb");
+      const noteEl = document.getElementById("note");
+
+      maxStreakEl.textContent = "—";
+      streakProbEl.textContent = "—";
+      noteEl.textContent = "";
+
+      if (![riskPct, winRate, ddLimit, nTrades].every(v => isFinite(v) && v > 0)) {
+        noteEl.textContent = "Fill all fields with numbers greater than 0.";
+        return;
+      }
+      if (winRate >= 100) {
+        noteEl.textContent = "Win rate must be less than 100%.";
+        return;
+      }
+      if (winRate <= 0) {
+        noteEl.textContent = "Win rate must be greater than 0%.";
+        return;
+      }
+      if (ddLimit >= 100) {
+        noteEl.textContent = "Drawdown limit must be less than 100%.";
+        return;
+      }
+      if (nTrades < 10) {
+        noteEl.textContent = "Use at least 10 trades for a meaningful horizon.";
+        return;
+      }
+
+      const q = 1 - (winRate / 100); // loss probability
+
+      // Conservative streak threshold:
+      // k losses * riskPct ≈ ddLimit  => k ≈ ddLimit / riskPct
+      // We floor it, because you hit/overflow the limit at that streak length.
+      const k = Math.floor(ddLimit / riskPct);
+
+      if (k <= 0) {
+        noteEl.textContent = "With this risk per trade and drawdown limit, one loss could already hit your limit.";
+        maxStreakEl.textContent = "0";
+        streakProbEl.textContent = "Very high";
+        return;
+      }
+
+      const pRun = probAtLeastOneRun(Math.floor(nTrades), k, q);
+
+      maxStreakEl.textContent = String(k) + " losses";
+      streakProbEl.textContent = formatPct(pRun * 100, 2);
+
+      // Guidance note
+      const riskMsg =
+        (pRun >= 0.5)
+          ? "High: a blow-up streak is likely over this many trades. Reduce risk per trade or lower trade frequency."
+          : (pRun >= 0.2)
+            ? "Medium: it can happen. Be disciplined with size and daily stop rules."
+            : "Lower: still possible, but sizing is more survivable.";
+
+      noteEl.textContent =
+        `With win rate ${round(winRate,1)}% and risk ${round(riskPct,2)}% per trade, about ${k} losses in a row would reach ~${round(ddLimit,1)}% drawdown. Estimated chance of at least one such streak over ${Math.floor(nTrades)} trades: ${formatPct(pRun * 100, 2)}. ${riskMsg}`;
+    }
+
+    document.getElementById("calcBtn").addEventListener("click", calculate);
+  </script>
+</body>
+</html>
