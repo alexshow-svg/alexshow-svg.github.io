@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Position Size Calculator • Risk & Discipline Library</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="container header">
+    <div class="brand">
+      <a class="logo" href="../index.html">Risk & Discipline Library</a>
+      <div class="tagline">Position size from account risk and stop distance.</div>
+    </div>
+    <nav class="nav">
+      <a href="../library.html">Library</a>
+      <a href="../tools.html">Tools</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Position Size Calculator</h1>
+      <p class="muted">
+        Enter your account size, risk %, entry, and stop. This outputs the position size so one loss doesn’t hurt your account.
+        Educational tool only.
+      </p>
+
+      <div class="kpi" style="margin-top:12px;">
+        <div class="card">
+          <div class="small">Risk Amount</div>
+          <div id="riskAmount" class="big">—</div>
+          <div class="small">Money you accept losing if stopped out</div>
+        </div>
+        <div class="card">
+          <div class="small">Position Size (Units)</div>
+          <div id="units" class="big">—</div>
+          <div class="small">How many shares/coins to buy</div>
+        </div>
+      </div>
+
+      <hr />
+
+      <label>Account Size (€)</label>
+      <input id="account" type="number" min="0" step="0.01" placeholder="e.g. 1000" />
+
+      <label>Risk per Trade (%)</label>
+      <input id="riskPct" type="number" min="0" step="0.01" placeholder="e.g. 1" />
+
+      <label>Entry Price</label>
+      <input id="entry" type="number" min="0" step="0.00000001" placeholder="e.g. 100" />
+
+      <label>Stop Price</label>
+      <input id="stop" type="number" min="0" step="0.00000001" placeholder="e.g. 95" />
+
+      <button class="button" id="calcBtn" style="margin-top:14px;">Calculate</button>
+
+      <p id="note" class="muted" style="margin-top:12px;"></p>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <div class="muted">Educational only • <a href="../legal.html">Disclaimers</a></div>
+  </footer>
+
+  <script>
+    function round(n, decimals = 2) {
+      const p = Math.pow(10, decimals);
+      return Math.round(n * p) / p;
+    }
+
+    function formatNum(n) {
+      if (!isFinite(n)) return "—";
+      // Keep it readable for both crypto and stocks
+      if (Math.abs(n) >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      return n.toLocaleString(undefined, { maximumFractionDigits: 8 });
+    }
+
+    function calculate() {
+      const account = Number(document.getElementById("account").value);
+      const riskPct = Number(document.getElementById("riskPct").value);
+      const entry = Number(document.getElementById("entry").value);
+      const stop = Number(document.getElementById("stop").value);
+
+      const riskAmountEl = document.getElementById("riskAmount");
+      const unitsEl = document.getElementById("units");
+      const noteEl = document.getElementById("note");
+
+      noteEl.textContent = "";
+
+      if ([account, riskPct, entry, stop].some(v => !isFinite(v) || v <= 0)) {
+        riskAmountEl.textContent = "—";
+        unitsEl.textContent = "—";
+        noteEl.textContent = "Fill all fields with numbers greater than 0.";
+        return;
+      }
+
+      const stopDistance = Math.abs(entry - stop);
+      if (stopDistance === 0) {
+        noteEl.textContent = "Entry and stop can’t be the same.";
+        return;
+      }
+
+      const riskAmount = account * (riskPct / 100);
+      const units = riskAmount / stopDistance;
+
+      riskAmountEl.textContent = "€ " + formatNum(round(riskAmount, 2));
+      unitsEl.textContent = formatNum(units);
+
+      noteEl.textContent =
+        `Stop distance: ${formatNum(stopDistance)}. If price hits your stop, your loss should be about €${formatNum(round(riskAmount,2))} (excluding fees/slippage).`;
+    }
+
+    document.getElementById("calcBtn").addEventListener("click", calculate);
+  </script>
+</body>
+</html>
