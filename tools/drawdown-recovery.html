@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Drawdown Recovery Calculator • Risk & Discipline Library</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="container header">
+    <div class="brand">
+      <a class="logo" href="../index.html">Risk & Discipline Library</a>
+      <div class="tagline">See how much % gain you need to recover after a loss.</div>
+    </div>
+    <nav class="nav">
+      <a href="../library.html">Library</a>
+      <a href="../tools.html">Tools</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Drawdown Recovery Calculator</h1>
+      <p class="muted">
+        A -30% drawdown does <em>not</em> need +30% to recover. This tool shows the real recovery requirement.
+        Educational only.
+      </p>
+
+      <div class="kpi" style="margin-top:12px;">
+        <div class="card">
+          <div class="small">Account After Drawdown</div>
+          <div id="afterValue" class="big">—</div>
+          <div class="small">What remains after the loss</div>
+        </div>
+        <div class="card">
+          <div class="small">Gain Needed to Break Even</div>
+          <div id="gainNeeded" class="big">—</div>
+          <div class="small">Percentage gain needed from the lower value</div>
+        </div>
+      </div>
+
+      <hr />
+
+      <label>Starting Account Value (€)</label>
+      <input id="start" type="number" min="0" step="0.01" placeholder="e.g. 1000" />
+
+      <label>Drawdown (%)</label>
+      <input id="dd" type="number" min="0" step="0.01" placeholder="e.g. 30" />
+
+      <button class="button" id="calcBtn" style="margin-top:14px;">Calculate</button>
+
+      <p id="note" class="muted" style="margin-top:12px;"></p>
+
+      <hr />
+      <h2>Quick intuition</h2>
+      <ul class="muted">
+        <li>-10% needs +11.11% to recover</li>
+        <li>-20% needs +25% to recover</li>
+        <li>-50% needs +100% to recover</li>
+      </ul>
+      <p class="muted">
+        This is why controlling drawdowns is more important than chasing big wins.
+      </p>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <div class="muted">Educational only • <a href="../legal.html">Disclaimers</a></div>
+  </footer>
+
+  <script>
+    function round(n, decimals = 2) {
+      const p = Math.pow(10, decimals);
+      return Math.round(n * p) / p;
+    }
+
+    function formatMoney(n) {
+      if (!isFinite(n)) return "—";
+      return "€ " + n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    function formatPct(n) {
+      if (!isFinite(n)) return "—";
+      return n.toLocaleString(undefined, { maximumFractionDigits: 2 }) + "%";
+    }
+
+    function calculate() {
+      const start = Number(document.getElementById("start").value);
+      const dd = Number(document.getElementById("dd").value);
+
+      const afterEl = document.getElementById("afterValue");
+      const gainEl = document.getElementById("gainNeeded");
+      const noteEl = document.getElementById("note");
+
+      noteEl.textContent = "";
+      afterEl.textContent = "—";
+      gainEl.textContent = "—";
+
+      if (!isFinite(start) || start <= 0) {
+        noteEl.textContent = "Enter a starting account value greater than 0.";
+        return;
+      }
+
+      if (!isFinite(dd) || dd <= 0) {
+        noteEl.textContent = "Enter a drawdown percentage greater than 0.";
+        return;
+      }
+
+      if (dd >= 100) {
+        noteEl.textContent = "A 100% drawdown means the account is wiped out. Recovery is not possible without new capital.";
+        return;
+      }
+
+      const after = start * (1 - dd / 100);
+      const gainNeeded = (start / after - 1) * 100;
+
+      afterEl.textContent = formatMoney(round(after, 2));
+      gainEl.textContent = formatPct(round(gainNeeded, 2));
+
+      noteEl.textContent =
+        `After a ${round(dd,2)}% drawdown, €${round(after,2)} remains. To return to €${round(start,2)}, you need about ${round(gainNeeded,2)}% gain from the lower value.`;
+    }
+
+    document.getElementById("calcBtn").addEventListener("click", calculate);
+  </script>
+</body>
+</html>
